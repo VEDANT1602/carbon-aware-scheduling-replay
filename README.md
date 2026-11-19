@@ -1,29 +1,14 @@
-# When does waiting repay the cost of a carbon forecast?
+# The carbon cost of looking for a cleaner time slot
 
-A scheduler can wait for a cleaner slot, use up the available slack, and still spend more carbon on the decision than it saves. This replay uses observed request counts and an explicit energy budget to calculate how expensive a forecast lookup can be before the saving disappears.
+The seven-day replay starts with 117,154 observed load-balancer count units. It treats each as a deferrable job and gives the scheduler a forecast of grid intensity. The request counts come from AWS CloudWatch via the Numenta Anomaly Benchmark. Job energy, deadlines, idle power and the grid curve are assumptions of the replay. [Workload](elb_request_count_8c0756.csv) · [Grid model](run.py#L35)
 
-[Read the manuscript (PDF)](manuscript.pdf) · [Read the Markdown version](manuscript.md) · [Inspect the daily results](results.csv)
+On April 17, the aligned forecast did 3,731 candidate lookups for 19,646 arrivals. Both schedules met every modeled deadline. Earliest-slot dispatch had a 95th-percentile start delay of zero minutes. The forecast policy used the full 60 minutes at that percentile. Total modeled emissions fell from 183.47 to 178.37 g CO2e that day. [Matched daily rows](results.csv?plain=1#L54)
 
-## Workload and comparison
+## What does a lookup have to cost to erase the saving?
 
-The input is one AWS load-balancer request-count series from the Numenta Anomaly Benchmark. Seven days in April 2014 set five-minute service capacity at 182 count units. The next seven days supply 117,154 observed count units. For the experiment, each unit becomes a hypothetical deferrable job. Three missing bins in the evaluation period receive zero arrivals in the main replay and the training median of 53 in a sensitivity check. The observed counts carry no job deadlines, service durations, power readings or regional grid intensities.
+With one hour of slack, a mixed grid, aligned forecasts and 2 J per candidate lookup, the seven-day saving is 28.10 g CO2e, or 2.33% of baseline emissions including idle allocation. The gross work saving is 33.91 g and the extra 26,169 lookups use 5.81 g. The forecast breaks even at **11.67 J per candidate lookup** under these assumptions. A two-hour phase error makes it emit 36.75 g more than earliest-slot dispatch.
 
-Both policies reserve slots on the same pool. One picks the earliest available slot. The other ranks available slots by forecast grid intensity, permitting delay up to the same deadline. Any work pushed past its deadline is still served and counted as late. Each schedule accounts for energy per job, idle power over a common meter window, and incremental energy charged to the forecast lookups. The study varies the allowable delay, the forecast's phase error and the shape of the modeled grid curve.
-
-## Findings
-
-For one hour of allowable delay on the mixed grid, the aligned forecast trades waiting time for lower estimated emissions. The main assumptions are 36 J per job, 10 W of idle power and 2 J per candidate lookup.
-
-| Seven-day result | Earliest slot | Aligned forecast |
-| --- | ---: | ---: |
-| Work emissions | 458.00 g CO2e | 424.08 g CO2e |
-| Candidate forecast lookups | 0 | 26,169 |
-| Incremental lookup emissions | 0.00 g CO2e | 5.81 g CO2e |
-| Total modeled emissions, including idle allocation | 1,208.22 g CO2e | 1,180.12 g CO2e |
-| Median daily 95th-percentile start delay | 0 min | 60 min |
-| Jobs served late | 0 | 0 |
-
-The gross saving is 33.91 g CO2e and the net saving is 28.10 g, or 2.33% of the baseline total. Dividing the gross saving by the emissions attributable to one joule per lookup gives a break-even point of 11.67 J per candidate. Introducing a two-hour forecast lag makes the forecast policy emit 36.75 g more than the baseline at the same one-hour deadline. The sensitivity follows from the modeled daily and four-hour cycles. Metering a deployment and matching issued forecasts to observed regional grid intensity would test whether these trade-offs hold in practice.
+Only three bins in the evaluation period lack observations. The main replay assigns zero arrivals to them, and a second pass assigns the training median of 53. The full results retain both treatments. Real deployment savings would require an issued forecast, measured grid intensity, a service energy measurement and an actual cost for waiting. [Daily replay](results.csv) · [Accounting method](manuscript.md) · [Paper PDF](manuscript.pdf)
 
 ## Reproduce
 
