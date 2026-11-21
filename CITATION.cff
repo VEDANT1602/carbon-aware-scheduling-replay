@@ -1,9 +1,10 @@
 cff-version: 1.2.0
-message: "Please use this citation when referring to the research software."
+message: "Please cite this software when reusing its methods."
 type: software
-title: "When does waiting repay the cost of a carbon forecast?"
+title: "How much energy can a carbon-aware scheduler spend evaluating a later start?"
 authors:
   - family-names: Thaker
     given-names: Vedant
 repository-code: "https://github.com/VEDANT1602/carbon-aware-scheduling-replay"
-abstract: "Carbon and service-delay trade-offs for deferrable jobs in a public workload replay."
+date-released: 2026-11-21
+license: MIT

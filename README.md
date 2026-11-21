@@ -1,4 +1,18 @@
-# The carbon cost of looking for a cleaner time slot
+# How much energy can a carbon-aware scheduler spend evaluating a later start?
+
+Vedant Thaker · November 21, 2026
+
+We estimate the energy per candidate start that would erase the modeled emissions benefit of delaying compute work. Two consecutive weeks of ARCHER2 allocations were paired with the Great Britain grid series for the same dates.
+
+- [Revised manuscript (PDF)](manuscript.pdf) · [Editable manuscript](manuscript.md)
+- [Revision code, results and reproduction instructions](revision/supplement/) · [Preparation record](revision/PREPARATION.md)
+- [Baseline software and results at the study commit](https://github.com/VEDANT1602/carbon-aware-scheduling-replay/tree/dea2cea99bfc52fb21a7321fdc0d676060e5472d) · [Software license](LICENSE) · [Third-party terms](LICENSING.md)
+
+## Earlier study and reproduction instructions
+
+The following instructions and results describe the original study. The revised paper and its supplemental tests are linked above.
+
+### The carbon cost of looking for a cleaner time slot
 
 The seven-day replay starts with 117,154 observed load-balancer count units. It treats each as a deferrable job and gives the scheduler a forecast of grid intensity. The request counts come from AWS CloudWatch via the Numenta Anomaly Benchmark. Job energy, deadlines, idle power and the grid curve are assumptions of the replay. [Workload](elb_request_count_8c0756.csv) · [Grid model](run.py#L35)
 
@@ -8,7 +22,7 @@ On April 17, the aligned forecast did 3,731 candidate lookups for 19,646 arrival
 
 With one hour of slack, a mixed grid, aligned forecasts and 2 J per candidate lookup, the seven-day saving is 28.10 g CO2e, or 2.33% of baseline emissions including idle allocation. The gross work saving is 33.91 g and the extra 26,169 lookups use 5.81 g. The forecast breaks even at **11.67 J per candidate lookup** under these assumptions. A two-hour phase error makes it emit 36.75 g more than earliest-slot dispatch.
 
-Only three bins in the evaluation period lack observations. The main replay assigns zero arrivals to them, and a second pass assigns the training median of 53. The full results retain both treatments. Real deployment savings would require an issued forecast, measured grid intensity, a service energy measurement and an actual cost for waiting. [Daily replay](results.csv) · [Accounting method](manuscript.md) · [Paper PDF](manuscript.pdf)
+Only three bins in the evaluation period lack observations. The main replay assigns zero arrivals to them, and a second pass assigns the training median of 53. The full results retain both treatments. Real deployment savings would require an issued forecast, measured grid intensity, a service energy measurement and an actual cost for waiting. [Daily replay](results.csv) · [Accounting method](https://github.com/VEDANT1602/carbon-aware-scheduling-replay/blob/dea2cea99bfc52fb21a7321fdc0d676060e5472d/manuscript.md) · [Paper PDF](https://github.com/VEDANT1602/carbon-aware-scheduling-replay/blob/dea2cea99bfc52fb21a7321fdc0d676060e5472d/manuscript.pdf)
 
 ## Reproduce
 
