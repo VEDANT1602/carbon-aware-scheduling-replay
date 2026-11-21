@@ -1,117 +1,86 @@
-# How much energy can a carbon-aware scheduler spend evaluating a later start?
+# How much does a one-hour deferral change the carbon account of a compute queue?
 
-**Vedant Thaker**  
-Independent Researcher, Jeffersonville, Indiana, United States  
-Correspondence: vthaker1@asu.edu  
+Vedant Thaker  
+Independent Researcher, Jeffersonville, Indiana, USA  
+vedant.thaker1602@gmail.com
+
 21 November 2026
 
-## Abstract
+### Abstract
 
-We estimate the energy per candidate start that would erase the modeled emissions benefit of delaying compute work. Two consecutive weeks of ARCHER2 allocations were paired with the Great Britain grid series for the same dates. March 2022 job-step meters supplied a median of 512 W per allocated node. A scheduler using the previous day’s intensity could move short allocations by up to one hour under an imposed flexibility allowance. It moved 8,870 of 18,650 eligible allocations in week one and 14,521 of 24,896 in week two. Modeled gross reductions were 11.58 and 12.66 kg CO₂. The break-even costs were 5,680 and 3,905 J per candidate start. Gross emissions increased on one day in each week. In a separate 2014 request-count replay, a candidate represented one slot for a whole batch of smaller, hypothetical jobs. Its break-even was 11.67 J per lookup under a prescribed grid curve. Neither trace reports permission to postpone jobs or meters the scheduler’s incremental energy. The estimates price specified decisions and identify the measurements needed to evaluate a live deployment.
+An HPC dispatcher deciding whether to wait must choose before it knows the job’s duration or the future grid intensity. We replayed 76,765 dated ARCHER2 job starts across two weeks in March 2022. A capacity-limited dispatcher compared the previous day’s grid intensities at three possible start times and otherwise used first-in, first-out service. In a scenario where every job of at most four nodes could wait for up to an hour, estimated compute emissions for all released jobs fell by 50.33 kg (0.092%) in week one and 17.83 kg (0.024%) in week two. Mean additional wait across the full job population was 21.8 and 26.9 minutes. Two and five nonparticipants also waited for capacity. Small gross changes in a retrospective carbon account leave open whether the service would save energy or emissions after accounting for controller overhead, unrecorded site constraints and users’ delay preferences.
 
-## 1. Pricing the work of choosing a start time
+## A decision with an unknown finish time
 
-Carbon-aware scheduling can change when electricity is consumed while leaving total job energy fixed. Radovanović et al. deployed forecast-based capacity controls for flexible data-center workloads [1]. Sukprasert et al. quantified limits on workload shifting across 123 grid regions [2]. Feng et al. evaluated congestion-aware starts for HPC jobs using a CEA-Curie workload, UK grid data from another period, and modeled delay tolerance [3]. These studies motivate a narrower accounting question. Given a particular policy and number of candidate starts, what incremental scheduling energy would consume its modeled benefit?
+A dispatcher can see a job’s requested node count and the grid signal available when the job arrives. Its actual finish time lies in the future. This distinction changes what can be evaluated from an allocation log. We compare starting an available job immediately with selecting among starts 0, 30 and 60 minutes later, using only yesterday’s intensity at those times. The contribution is a complete queue replay with the effect on jobs outside the participating group explicitly charged to the policy.
 
-We first pair UK node allocations with the national grid record on their actual dates and retain observed background occupancy. A separate same-system meter dataset calibrates power. Two adjacent weeks give an observed repeat at the same site. An earlier, controlled request-count calculation uses a smaller unit of work and a deliberately misaligned forecast to expose when the sign can change. No intervention was performed on either service.
+Production carbon-aware systems use forecasts and capacity controls [1]. The opportunity also depends on workload flexibility and grid variation [2]. COAST offers an informative example [3]. Its authors filtered 165,887 jobs from the CEA-Curie 2011 trace into 224 day-long windows and paired those windows with randomly aligned 2025 British intensity. They assumed 10 W/core and modeled deadlines. Their held-out comparison reported a 15.4% carbon reduction and 1.5 hours of added average waiting against their earliest-feasible observed baseline. Our percentage covers all released jobs in two calendar-matched UK weeks, including large ineligible jobs. The two estimates answer different operating questions.
 
-## 2. A signed break-even budget
+## What the dispatcher sees
 
-For each schedule, integrate the grid intensity across the duration of each allocation and multiply by its assigned power and node count. If intensity is in g CO₂/kWh, time in seconds and power in watts, divide the product by 3,600,000 to obtain grams. Let G be baseline minus shifted job emissions. Let K be the sum, over decision times, of the number of incremental candidate evaluations times the intensity at the decision, divided by 3,600,000. If each costs e joules, net saving in grams equals G − eK. For K > 0 and G > 0, break-even is G/K joules per candidate. A negative G means even a cost-free scheduler increases modeled emissions. For G = 0, a positive cost produces a loss.
+The ARCHER2 allocation release provides UTC starts, ends and allocated nodes [4]. We take the starts in 7–13 and 14–20 March 2022 as the times at which jobs become available. The release has no submission times, reservations, documented deadline or opt-in field. This convention reconstructs recorded starts in an unshifted queue. It cannot recover users’ original queue waits. Jobs already running at the start of each week occupy nodes until they complete. All released jobs count until their actual simulated completion, including jobs that extend beyond Sunday. Each weekly experiment starts with its own observed carry-in.
 
-The incremental budget includes evaluating all advertised offsets, including rejected offsets. It excludes admission and reservation work common to both schedules. The threshold assumes evaluation at the original start on the same grid. A shared daily forecast, cached service, or separate control-plane region needs a different count and intensity. A candidate in the UK study is one potential start for a multi-second or multi-hour allocation. In the count experiment it is one five-minute service bin evaluated once for an entire arrival batch. Their numerical budgets therefore price different operations.
+At release, a job using one to four nodes enters a hypothetical opt-in cohort. We vary the share deterministically by hashing a week-specific input-row index. A participating job compares the previous day’s realized national average intensity for each candidate’s starting half hour [7]. Ties take the earlier time. This rule needs no runtime prediction and charges no network round trip because the table is resident in memory. The 24-hour lag makes every signal available in calendar time before the proposal, subject to the assumption that the historical estimate was published by then. First-publication timestamps and subsequent corrections are unavailable.
 
-## 3. Allocations, grid estimates and node meters
+Jobs enter the ready queue in order of proposed eligibility, with a stable tie break. When the head fits on the free nodes, it starts. The event engine learns completion after the observed duration elapses. It never exposes future jobs, occupancy or realized duration to the proposal rule. The pool has 5,860 interchangeable nodes, the published system total [8]. Memory classes, maintenance, backfill, network topology, runtime changes after shifting and service priorities are absent. Capacity blocking can extend waits beyond the selected offset.
 
-The ARCHER2 Slurm release contains allocated node counts and observed starts and finishes [4]. We used March 7–13, 2022, the first complete Monday–Sunday block of that month, and repeated the analysis on March 14–20, all in UTC. Include every positive-duration, positive-node allocation overlapping the focal week or its two-hour drain. This retains 39,746 and 38,805 background and eligible records, respectively. A candidate for movement must start and finish within the week, use at most four nodes and last at most two hours. These thresholds define a tractable class of short allocations and assert no service entitlement. The file omits submit times, user deadlines, consent, node identities and dependencies.
+## The carbon denominator includes the entire release cohort
 
-The HPC-JEEP archive recorded 966,839 completed ARCHER2 job steps in March 2022 [5]. For the 953,798 steps with positive energy, nodes and elapsed duration, we divided recorded joules by node-seconds. The lower quartile, median and upper quartile across individual steps were 438.18, 512.18 and 541.10 W/node. We use the median as a constant across candidate starts and examine both quartiles. The project report documents node energy counters and missing readings, and excludes facility overhead from these node measurements [6]. An accounting step and an anonymous Slurm allocation have different identifiers. We apply a distribution of measured powers without assigning a particular meter reading to any allocation.
+For each job we integrate observed national half-hourly intensity across every second of its execution, weighted by its node count and an assigned W/node. A separate March 2022 ARCHER2 job-step energy dataset yielded 953,798 positive observations among 966,839 completed steps after filtering. Median measured compute power was 512.18 W/node and the interquartile range was 438.18–541.10 W/node [5,6]. Individual step energy cannot be joined to the anonymized allocation records. A common factor scales absolute mass and cancels from percentages. Idle system power, marginal emissions and cooling are outside this account.
 
-NESO supplies half-hourly GB national average intensity and an archived forecast [7]. Its actual field is a generation-based estimate in g CO₂/kWh. For the main decision rule, an interval takes the value from the corresponding half-hour of the previous day. Even the longest candidate ends before that historical profile approaches decision time. Historical data may incorporate later corrections. The two diagnostics rank with the archived forecast and with the realized grid profile. The archive has no forecast issue timestamps. Neither diagnostic evaluates a guaranteed day-ahead feed. We use the realized series to score all schedules.
+For the full-participation one-hour scenario, the weekly all-job baseline was 54,567 and 74,217 kg, of which participating jobs represented 11,925 and 15,616 kg. At 30 minutes of permitted deferral, full-queue percentage savings were 0.0476% and 0.0123%. With a 60-minute horizon but only a quarter of small jobs participating, savings were 0.0241% and 0.0069%. Each percentage is a comparison with the same unshifted release cohort. On five of the fourteen release days the one-hour full-participation policy increased the cohort’s emissions.
 
-## 4. Moving an occupied interval without exceeding the observed peak
 
-The comparison starts with all allocations in place. Traverse eligible intervals in original start, end and node-count order. Momentarily free each interval, evaluate starts from the original time through 0, 30, 60 or 120 minutes of additional delay in half-hour increments, and keep duration and node count fixed. Reject any placement that would push total occupied nodes over the week’s original peak. Of the remaining starts choose the one with lowest predicted integrated intensity, taking the earliest on ties. The original slot is always an available placement at that step. With future background allocations fixed, this is a retrospective replay with knowledge of durations and aggregate occupancy. It assumes interchangeable nodes. Site reservations, network topology and workflow precedence could further restrict feasibility.
+| Weekly outcome, 60-minute horizon | 7–13 Mar | 14–20 Mar |
+| --- | --- | --- |
+| All jobs released | 38,794 | 37,971 |
+| Eligible and participating | 32,246 | 32,717 |
+| Jobs delayed | 16,263 | 19,049 |
+| Nonparticipants delayed | 2 | 5 |
+| Peak occupied nodes | 5,858 | 5,860 |
+| Gross carbon reduction (kg) | 50.33 | 17.83 |
+| Reduction / all-job baseline (%) | 0.0922 | 0.0240 |
+| Reduction among participants (%) | 0.4221 | 0.1144 |
+| Mean delay, all jobs (min) | 21.76 | 26.92 |
+| Mean delay, participants (min) | 26.18 | 31.25 |
+Matched weekly carbon accounts and waiting times. Full hypothetical participation by small jobs. Delay includes waiting for capacity.
 
-Under the 60-minute previous-day rule, week-one eligible job attribution changed from 448.31 to 436.73 kg CO₂, with 55,950 candidates examined. Average delay across all eligible jobs was 24.72 minutes. In week two the corresponding values were 578.60 to 565.94 kg, 74,688 candidates and 31.67 minutes. The count rose by a third while gross savings rose only 9.3%, and the grid intensity at decision times also changed. These changes lower the second week’s budget per candidate. At 2 J each, modeled net savings were 11.575 and 12.652 kg. The 2 J value illustrates the equation and has no basis in a physical controller measurement.
+## Which costs would erase the benefit?
 
-Gross daily changes at 60 minutes ranged from −0.205 to 3.287 kg in week one and −1.176 to 4.742 kg in week two. Each week had six positive days. At the two empirical power quartiles the primary week’s 60-minute budget varied from 4,859 to 6,001 J/candidate. At the median power, ranking with the archived forecast gave 5,891 and 4,810 J/candidate in the respective weeks. The greedy rule with realized intensity scores gave 8,178 and 6,667 J/candidate. Perfect scores on a greedy search give a hindsight comparison without proving a global optimum. Table 1 summarizes the main prospective-signal approximation. The two consecutive weeks do not furnish independent season or site replicates.
+The number of candidate evaluations was 96,738 and 98,151 in the two full-participation weeks. If each evaluation consumed E joules at the release-time grid intensity, the emission charge would be E times the sum of those intensities divided by 3.6 million. Dividing the weekly gross benefit by that coefficient gives 14.65 and 4.13 kJ per evaluation. These are break-even budgets under a specified accounting rule. Site-wide system energy, agent polling and remote forecast retrieval would require their own measured cost boundaries.
 
-| Week, March | Slack (min) | Moved | Gross kg CO₂ | J/candidate |
-| --- | --- | --- | --- | --- |
-| 7–13 | 0 | 0 | 0.00 | 0 |
-| 7–13 | 30 | 7,989 | 6.41 | 4,715 |
-| 7–13 | 60 | 8,870 | 11.58 | 5,680 |
-| 7–13 | 120 | 9,668 | 19.43 | 5,718 |
-| 14–20 | 0 | 0 | 0.00 | 0 |
-| 14–20 | 30 | 13,375 | 6.42 | 2,971 |
-| 14–20 | 60 | 14,521 | 12.66 | 3,905 |
-| 14–20 | 120 | 16,150 | 25.14 | 4,654 |
+The actual three-candidate decision function was timed on the first week’s 32,246 participating releases. Thirteen alternating-order pairs compared the resident-table lookup and choice with an immediate-start loop on the same timestamps. Median incremental elapsed time was 0.81 microseconds per proposal on one x86-64 Python 3.12 host. This measures local policy computation only. There was no readable package-energy counter or scheduler power meter on that host, so energy per lookup and net carbon benefit remain unmeasured. The supplied script also reads a Linux package-energy counter when accessible.
 
-Table 1. Previous-day intensity signals and a median 512.18 W/node. Eligible totals are 18,650 and 24,896. Aggregate concurrency stayed at or below the original peaks of 5,760 and 5,774 nodes. A zero-slack evaluation has no gross benefit.
+## What a live trial must establish
 
-## 5. What a reservation clock establishes
-
-An observed start is a lower bound chosen for this counterfactual. It reveals neither an acceptable latest start nor a user’s willingness to wait. We checked the separate French Grid’5000 OAR archive to see what its explicit reservation records add [8]. Of 69,189 linked reservation records, 48,212 had positive runtime and valid windows. In every such record, submission plus waiting equalled the stored reservation start, and reservation duration equalled observed runtime. Requiring the entire run to remain inside that recorded window leaves zero room to move it. This identity describes the stored field semantics and does not establish that the user would have declined a different reservation. No French record entered the UK carbon calculation.
-
-Whole-job SLA compliance therefore remains unidentified. With no discretionary movement the gross scheduling benefit vanishes, as the zero-slack rows show. The positive-slack rows quantify the value of a permission that an operator would need to record independently. We acknowledge the Grid’5000 and OAR teams, including Franck Cappello, Olivier Richard and Nicolas Capit, and the Grid Workloads Archive for the reservation observations.
-
-## 6. A controlled sign reversal in the request-count replay
-
-The legacy comparison uses Numenta’s AWS load-balancer count file with 4,032 observations [9,10]. April 10–16, 2014 sets a five-minute capacity of 182 using the ceiling of the observed 95th percentile. April 17–23 supplies 117,154 count units under zero imputation in three missing bins. A unit becomes one hypothetical 36 J job. A policy can inspect 13 bins per nonempty batch with a 60-minute allowance. It reserves capacity in forecast order and serves any overdue jobs in the next available later bin. A common idle draw of 10 W is charged for each day’s 26-hour accounting window. The flat, daily and two-frequency intensity curves are imposed. The mixed case adds 24-hour and four-hour cosines with amplitudes 150 and 65 g CO₂e/kWh to a 400 g baseline.
-
-With the forecast aligned to the mixed grid, earliest and ranked scheduling served all jobs on time. The gross saving of 33.91 g CO₂e fell to 28.10 g after 26,169 candidate lookups priced at 2 J each. The implied threshold is 11.67 J/lookup, and mean delay rose from 0.34 to 32.42 min. A two-hour lag reverses the four-hour component and produces a 36.75 g net penalty. With a single weekly queue and drain the penalty is 36.85 g. Halving and doubling the assumed work energy shift the aligned threshold to 5.83 and 23.33 J/lookup. Under the flat grid, extra lookups add 5.82 g. Replacing the three missing bins with the training median of 53 changes aligned net savings to 28.12 g. These are g CO₂e from imposed curves. The UK results use the provider’s g CO₂ unit.
-
-## 7. What a deployment would have to measure
-
-Within these two March weeks, imposing one hour of flexibility on selected allocations produced positive gross savings in aggregate and occasional daily losses. Whole-node power, a GB average carbon signal, known background occupancy and fixed durations condition that result. Holding job energy constant allocates it to different times. Changes in machine idle power, cooling, local grid mix and marginal power-system emissions could give different physical outcomes.
-
-A deployment test needs signed-off job windows, as-issued forecast histories, node-level placement rules and workload-specific meters. It also needs incremental energy for the deployed decision service, including any remote forecast generation or caching allocated to it. The analysis host exposed no accessible powercap energy counter, MSR device or wattmeter for that measurement. External ARCHER2 meters established a compute-power scale only. Until scheduling energy and authorized flexibility are measured jointly, G/K is a budget against which a deployment can be tested.
+The sign changes across individual release days show the limitation of using yesterday’s grid conditions to select a later slot. In both weeks the full-cohort benefit was below one tenth of one percent, while some jobs outside the opt-in group incurred a wait. The operator deciding whether to implement this policy needs a release-time signal with known publication history, explicit user permission to defer and measured incremental controller energy on the deployment machine. The trace supports estimating the gross trade-off conditional on those scheduling assumptions.
 
 ## Data and code availability
 
-The accompanying supplement includes the dated UK allocation subsets, GB intensity, meter percentiles, reservation audit, both weeks’ outputs and source hashes. DATA-SOURCES.md identifies the inputs, attribution and transformations. Run python dated_replay.py and python check_dated.py, then repeat both commands with --repeat. All four runs use standard Python. The original count replay, upstream data notice and 1,008 daily rows are available in the baseline repository. Environment locks, run.py, verify.py, a row comparator and the continuous-week replay accompany that experiment.
+The supplement includes the two dated allocation and intensity subsets, the extra grid intervals needed for the last completions, source attribution, model code, daily results and the paired timing log. Sources [4], [5] and [7] provide upstream data. The related data extraction is pinned at https://github.com/VEDANT1602/carbon-aware-scheduling-replay/tree/a31ba8a660c26067dddd8121c313332d9939a89b .
 
-[Pinned baseline](https://github.com/VEDANT1602/carbon-aware-scheduling-replay/tree/dea2cea99bfc52fb21a7321fdc0d676060e5472d) · [Revision code and data](https://github.com/VEDANT1602/carbon-aware-scheduling-replay/tree/main/revision/supplement) · [Preparation record](https://github.com/VEDANT1602/carbon-aware-scheduling-replay/blob/main/revision/PREPARATION.md)
+[Study files, software and source records](https://github.com/VEDANT1602/carbon-aware-scheduling-replay/tree/main/study)
 
-## Computational verification
+## Author and disclosures
 
-A separate event sweep checked the candidate decisions saved for both 60-minute previous-day replays, the multiset of eligible allocations, allowed delays, node peaks, integrated job attribution and break-even values. Raw source digests and transformations are listed in DATA-SOURCES.md. The legacy verifier checked the count digest and energy arithmetic. A fresh calculation matched all legacy scenario keys and integer fields, with maximum absolute floating-field difference below 6 × 10⁻¹⁴.
+Vedant Thaker is the sole author and set the research question. OpenAI Codex assisted with implementing the forward trace replay, checking the accounting, timing the lookup implementation and drafting the analysis.
 
-## Author contribution
-
-Vedant Thaker is the sole author. He designed the original carbon-aware scheduling study, wrote its manuscript, developed its original software, and requested the comparisons and checks reported in this revision.
-
-## Use of computational assistance
-
-OpenAI Codex assisted with the scheduling replays, preparation of the trace-based comparisons, accounting and time-boundary checks, and source verification, as well as literature checks and preparation of the revised text. The author set the research question and requested the revision.
-
-## Funding
-
-This research received no specific grant from any funding agency in the public, commercial, or not-for-profit sectors.
-
-## Competing interests
-
-The author declares no competing interests.
+This research received no specific grant from any funding agency in the public, commercial, or not-for-profit sectors. The author declares no competing interests.
 
 ## References
 
-[1] A. Radovanović et al. Carbon-Aware Computing for Datacenters. IEEE Transactions on Power Systems 38, 1270–1280 (2023). https://doi.org/10.1109/TPWRS.2022.3173250
+[1] A. Radovanović et al. Carbon-Aware Computing for Datacenters. IEEE Transactions on Power Systems 38, 1270–1280 (2023). <https://doi.org/10.1109/TPWRS.2022.3173250>
 
-[2] T. Sukprasert, A. Souza, N. Bashir, D. Irwin and P. Shenoy. On the Limitations of Carbon-Aware Temporal and Spatial Workload Shifting in the Cloud. EuroSys, 924–941 (2024). https://doi.org/10.1145/3627703.3650079
+[2] T. Sukprasert, A. Souza, N. Bashir, D. Irwin and P. Shenoy. On the Limitations of Carbon-Aware Temporal and Spatial Workload Shifting in the Cloud. EuroSys, 924–941 (2024). <https://doi.org/10.1145/3627703.3650079>
 
-[3] W. Feng, A. Dasgupta, Z. D. Tekler, S. Ahuja, J. Zheng and X. Jiang. COAST: Congestion-Aware Start-Time Recommendations for Carbon-Aware HPC Jobs. arXiv:2609.05443v1 (2026), preprint. https://arxiv.org/abs/2609.05443v1
+[3] W. Feng, A. Dasgupta, Z. D. Tekler, S. Ahuja, J. Zheng and X. Jiang. COAST: Congestion-Aware Start-Time Recommendations for Carbon-Aware HPC Jobs. arXiv:2609.05443v1 (2026), preprint. <https://arxiv.org/abs/2609.05443v1>
 
-[4] A. Jackson and I. Lamprakis. HPC System Usage Data, v1.0. ARCHER2 Slurm summary dataset (2024). https://doi.org/10.5281/zenodo.14284189
+[4] A. Jackson and I. Lamprakis. HPC System Usage Data, v1.0. ARCHER2 Slurm summary dataset (2024). <https://doi.org/10.5281/zenodo.14284189>
 
-[5] A. Turner and A. Basden. HPC-JEEP: Energy Usage on ARCHER2 and the DiRAC COSMA HPC services dataset (2022). https://doi.org/10.5281/zenodo.7128646
+[5] A. Turner and A. Basden. HPC-JEEP: Energy Usage on ARCHER2 and the DiRAC COSMA HPC services dataset (2022). <https://doi.org/10.5281/zenodo.7128646>
 
-[6] A. Turner and A. Basden. HPC-JEEP: Energy Usage on ARCHER2 and the DiRAC COSMA HPC services. Technical report (2022). https://doi.org/10.5281/zenodo.7137390
+[6] A. Turner and A. Basden. HPC-JEEP: Energy Usage on ARCHER2 and the DiRAC COSMA HPC services. Technical report (2022). <https://doi.org/10.5281/zenodo.7137390>
 
-[7] National Energy System Operator and project partners. Carbon Intensity API, national half-hourly GB intensity and forecast series. See DATA-SOURCES.md for the two dated API requests. https://carbonintensity.org.uk/
+[7] National Energy System Operator and partners. Carbon Intensity API for Great Britain. National half-hourly estimates and data license. <https://carbonintensity.org.uk/>
 
-[8] A. Iosup and M. Jan, trace contributors. Grid Workloads Archive, GWA-T-2 Grid5000. Archived OAR jobs and reservations. https://atlarge-research.com/gwa-t-2/
-
-[9] Numenta. NAB, realAWSCloudwatch, elb_request_count_8c0756.csv. Input series, Git blob c2c83f9f470653d5db71f8aa6a038a98e075c7ae. https://github.com/numenta/NAB/blob/master/data/realAWSCloudwatch/elb_request_count_8c0756.csv
-
-[10] A. Lavin and S. Ahmad. Evaluating Real-Time Anomaly Detection Algorithms – The Numenta Anomaly Benchmark. IEEE International Conference on Machine Learning and Applications, 38–44 (2015). https://doi.org/10.1109/ICMLA.2015.141
+[8] ARCHER2 Service. Hardware overview. HPE Cray EX compute nodes and system configuration. <https://docs.archer2.ac.uk/user-guide/hardware/>
