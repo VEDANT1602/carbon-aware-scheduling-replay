@@ -1,12 +1,9 @@
-# How much does a one-hour deferral change the carbon account of a compute queue?
+# The carbon opportunity in one hour of flexibility at ARCHER2
 
-Technical report by Vedant Thaker, Independent Researcher, Jeffersonville, Indiana. Correspondence: vedant.thaker1602@gmail.com.
+Scheduling study by Vedant Thaker, Independent Researcher, Jeffersonville, Indiana, USA.
 
-An HPC dispatcher deciding whether to wait must choose before it knows the job’s duration or the future grid intensity. We replayed 76,765 dated ARCHER2 job starts across two weeks in March 2022. A capacity-limited dispatcher compared the previous day’s grid intensities at three possible start times and otherwise used first-in, first-out service. In a scenario where every job of at most four nodes could wait for up to an hour, estimated compute emissions for all released jobs fell by 50.33 kg (0.092%) in week one and 17.83 kg (0.024%) in week two. Mean additional wait across the full job population was 21.8 and 26.9 minutes. Two and five nonparticipants also waited for capacity. Small gross changes in a retrospective carbon account leave open whether the service would save energy or emissions after accounting for controller overhead, unrecorded site constraints and users’ delay preferences.
+How much could a scheduler save by choosing among three starts within one hour? A replay of 76,765 observed ARCHER2 allocations in two March 2022 weeks compares yesterday’s grid signal with a scheduler given the future grid intensity and each job’s duration. Using the recorded start as the simulated release, the previous-day policy reduced estimated gross compute emissions across all jobs by 50.33 kg (0.0922%) and 17.83 kg (0.0240%). Mean additional waits were 21.76 and 26.92 minutes. An offline schedule that preserved every nonparticipant’s start attained 220.34 and 167.62 kg. Independent best starts give ceilings of 221.58 kg (0.4061%) and 167.62 kg (0.2258%) under the same protection. A better signal could therefore improve both weeks substantially relative to the tested policy, while the absolute opportunity remained below half a percent of the full carbon account. Submission times and delay permissions are absent from the allocation data.
 
-- [Read the paper](manuscript.pdf)
-- [Read the plain-text manuscript](manuscript.md)
-- [Reproduce the analysis and inspect the source and data records](study/README.md)
-- [Software license](LICENSE) and [third-party terms](LICENSING.md)
-- [Preparation record](study/PREPARATION.md)
-- [Previous manuscript and supplements](https://github.com/VEDANT1602/carbon-aware-scheduling-replay/tree/a31ba8a660c26067dddd8121c313332d9939a89b)
+[Paper (PDF)](manuscript.pdf) · [Editable text](manuscript.md) · [Methods and study files](study/README.md) · [Manuscript history](study/VERSION.md)
+
+[Author-owned software license](LICENSE) · [Third-party terms](LICENSING.md) · [Previous version](https://github.com/VEDANT1602/carbon-aware-scheduling-replay/tree/1085b81bbaf1c4a3f590f50e5add005b93633ba7)

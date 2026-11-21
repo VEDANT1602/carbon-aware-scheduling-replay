@@ -34,7 +34,7 @@ def proposal(t,offsets,grid):
     base=(t//STEP)*STEP-86400
     return t+min(offsets,key=lambda off:grid[base+off])
 
-def queue_sim(rows,start,end,delays,share,grid,week):
+def queue_sim(rows,start,end,delays,share,grid,week,*,offline_targets=None):
     carry=[(e,n) for s,e,n in rows if s<start<e]
     arrivals=[(s,n,e-s) for s,e,n in rows if start<=s<end]
     occupied=sum(n for e,n in carry);peak=occupied
@@ -48,7 +48,13 @@ def queue_sim(rows,start,end,delays,share,grid,week):
         while pos<len(arrivals) and arrivals[pos][0]==t:
             _,n,_=arrivals[pos]
             participate=n<=4 and share>0 and opt_in(pos,week,share)
-            eligible=proposal(t,delays,grid) if participate else t
+            if not participate:
+                eligible=t
+            elif offline_targets is None:
+                eligible=proposal(t,delays,grid)
+            else:
+                eligible=offline_targets[pos]
+                assert eligible-t in delays
             if participate:checks[pos]=len(delays)
             heapq.heappush(ready,(eligible,pos));pos+=1
         while ready and ready[0][0]==t:pending.append(heapq.heappop(ready)[1])

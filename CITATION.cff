@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "Please cite this software if you use it."
 type: software
-title: "How much does a one-hour deferral change the carbon account of a compute queue?"
+title: "The carbon opportunity in one hour of flexibility at ARCHER2"
 authors:
   - family-names: Thaker
     given-names: Vedant
