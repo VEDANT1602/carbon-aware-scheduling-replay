@@ -12,3 +12,5 @@
 ## Why the earlier 2.6% value differs
 
 The [earlier pinned replay](https://github.com/VEDANT1602/carbon-aware-scheduling-replay/tree/a31ba8a660c26067dddd8121c313332d9939a89b) tabulates 11,579.32 g divided by 448,312.13 g = 2.583% for week-one previous-day scoring with 60 minutes allowed delay. Its denominator covered 18,650 small and short eligible jobs, selected using realized duration, and the scoring rule evaluated each job's known full duration. The new forward rule uses the starting half-hour and the eligibility rule uses only node count and hypothetical participation. The new primary denominator is all jobs released that week. COAST uses a third, differently defined comparison.
+
+The extended sample reuses source [4] in full and the meter calibration in [5]. For [7], the supplement records each fortnightly request and raw-response SHA-256 in `outputs/seasonal_inputs.csv` (December 2021 through mid-October 2022). The wider range supplies past same-weekday estimates and enough outcome intervals to cover completions. The study distributes weekly aggregates and retrieval code for these windows.

@@ -1,11 +1,9 @@
 # The carbon opportunity in one hour of flexibility at ARCHER2
 
-Scheduling study by Vedant Thaker, Independent Researcher, Jeffersonville, Indiana, USA.
+Scheduling study by Vedant Thaker, Independent Researcher, Jeffersonville, Indiana, USA. Revised November 24, 2026.
 
-**Research period (author-reported)** · September 19–October 1, 2026 &nbsp; | &nbsp; **Manuscript revised** · November 21, 2026
-
-How much could a scheduler save by choosing among three starts within one hour? A replay of 76,765 observed ARCHER2 allocations in two March 2022 weeks compares yesterday’s grid signal with a scheduler given the future grid intensity and each job’s duration. Using the recorded start as the simulated release, the previous-day policy reduced estimated gross compute emissions across all jobs by 50.33 kg (0.0922%) and 17.83 kg (0.0240%). Mean additional waits were 21.76 and 26.92 minutes. An offline schedule that preserved every nonparticipant’s start attained 220.34 and 167.62 kg. Independent best starts give ceilings of 221.58 kg (0.4061%) and 167.62 kg (0.2258%) under the same protection. A better signal could therefore improve both weeks substantially relative to the tested policy, while the absolute opportunity remained below half a percent of the full carbon account. Submission times and delay permissions are absent from the allocation data.
+ARCHER2 publishes job starts but records neither submission times nor permission to defer jobs in this dataset. We use its observed starts to ask a narrower question: how much national-average compute carbon could three start choices have changed? Eight weeks from March through September 2022 cover 292,776 allocations. For jobs with up to four nodes we allowed delays of zero, 30 or 60 minutes and kept other starts fixed. A four-week same-weekday signal yielded a modeled saving of 204.23 kg CO₂ (0.0313% of all-job compute emissions), against 116.09 kg for the previous-day signal. Letting each job draw a fixed power within the central half of the March meter distribution gave a pooled four-week-signal saving of 101–289 kg across extreme assignments. A feasible schedule with perfect information saved 1,001.99 kg. Relaxing capacity raised the upper bound to 1,017.09 kg (0.1559%). This bounds the opportunity within the assumed start choices and constant-power account.
 
 [Paper (PDF)](manuscript.pdf) · [Editable text](manuscript.md) · [Methods and study files](study/README.md) · [Manuscript history](study/VERSION.md)
 
-[Author-owned software license](LICENSE) · [Third-party terms](LICENSING.md) · [Previous version](https://github.com/VEDANT1602/carbon-aware-scheduling-replay/tree/41a27c21e1e79ae028cd9aae5844d28a551e3eeb)
+[Author-owned software license](LICENSE) · [Third-party terms](LICENSING.md) · [Previous version](https://github.com/VEDANT1602/carbon-aware-scheduling-replay/tree/e5b3039b2c8aba1695f08a9bef441d31d65950c0)

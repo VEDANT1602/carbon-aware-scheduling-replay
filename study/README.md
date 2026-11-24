@@ -34,3 +34,24 @@ verify_opportunity.py derives the protected upper bounds and participant split i
 - inputs/week*/gb_intensity.csv and inputs/drain_intensity.csv transform the GB **Carbon Intensity API** from National Energy System Operator and project partners, under its [terms](https://carbonintensity.org.uk/) and [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). These files flatten national half-hour records and convert dates to epochs. Only actual estimates enter this paper. The extra drain intervals cover all completions. Keep attribution with derivative tables.
 - inputs/archer2_meter_calibration.csv consists of a count and summary quantiles computed from the [HPC-JEEP job-step energy dataset](https://doi.org/10.5281/zenodo.7128646), Andrew Turner and Alastair Basden (2022), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) per the upstream release metadata. The original archive is not included.
 - Vedant Thaker's analysis code is MIT-licensed. Neither that license nor the carbon reductions confer permission to delay any specific job.
+
+## Fixed-calendar forecast comparison
+
+The extension takes the first Monday-starting week of each month from January through September 2022, and keeps the second March week for comparison with the original replay. Every inclusion or rejection is in `outputs/seasonal_windows.csv`. A recorded baseline that exceeds the installed node count cannot satisfy the protected-start experiment. The scripts exclude such a week as a unit before evaluating a signal. The all-job denominator covers the same releases under every policy. Carry-in occupies capacity without entering the weekly release cohort.
+
+Run with Python 3.10 or later. Allow about 130 MB for the upstream allocations and intensity responses. The path is a download cache outside the supplement.
+
+```sh
+python scripts/fetch_seasonal.py /tmp/archer2-seasonal
+python scripts/seasonal.py /tmp/archer2-seasonal
+python scripts/verify_seasonal.py /tmp/archer2-seasonal
+```
+
+`outputs/seasonal_inputs.csv` pins the URLs and SHA-256 digests of the allocation release and 23 fortnightly intensity responses used here. Historic intensities can be revised by the publisher. Retain the downloaded cache to preserve the exact inputs. `outputs/seasonal.csv` holds one row per admitted week and method. The labels `day`, `week` and `four_weeks` denote one-day persistence, seven-day persistence, and the mean of the previous four same-weekday UTC slots. A lag contributes only if all three candidate bins have a recorded estimate. If every lag is missing, the job proposes its recorded start. Each forecasting rule has both a forward FIFO row and a protected-start row. The latter uses the full occupancy timetable for capacity repair; its signal uses only hours that ended before the release. The column `no_signal_participants` counts jobs that had to use the no-shift default.
+
+The feasible oracle respects node capacity. The ceiling frees node capacity only when considering each participant’s best shift and bounds the protected-start class. Oracle and signal accounts charge the full actual duration of each selected job. Percentages pooled over several weeks must use the sum of the weekly baselines in the denominator. The verification script uses explicit half-hour interval sums to recompute all eight admitted weeks’ reference accounts and ceilings, checks agreement with the original two March tables, and rejects future signal accesses.
+
+
+## Power sensitivity of the four-week protected schedule
+
+From the study directory run `python scripts/power_sensitivity.py /tmp/archer2-seasonal` after retrieving the seasonal inputs. The script checks all 24 input hashes against the saved manifest, reconstructs the fixed schedules, and matches each weekly carbon total to the seasonal replay. For the same power in both timing alternatives, each job's paired carbon change scales linearly with power. The two extreme assignments use March step-level meter quartiles as an illustrative common admissible range. Only jobs with a positive or negative change affect the result. The per-week sums and extremal scenarios are in `outputs/power_sensitivity.csv`. These scenarios do not estimate the distribution of actual job-level powers.
